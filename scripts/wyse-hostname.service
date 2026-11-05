@@ -1,0 +1,13 @@
+[Unit]
+Description=Restore the saved Wyse hostname
+RequiresMountsFor=/var/lib/wyse-settings
+ConditionFileNotEmpty=/var/lib/wyse-settings/hostname
+Before=NetworkManager.service
+After=dbus.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -ec 'read -r name < /var/lib/wyse-settings/hostname; exec /usr/bin/hostnamectl --no-ask-password set-hostname "$$name"'
+
+[Install]
+WantedBy=multi-user.target

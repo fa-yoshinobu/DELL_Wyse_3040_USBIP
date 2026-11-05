@@ -1,0 +1,7 @@
+[Unit]
+Description=Prepare a persistent Debian update
+RequiresMountsFor=/var/lib/wyse-settings
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/sbin/wyse-os-update prepare

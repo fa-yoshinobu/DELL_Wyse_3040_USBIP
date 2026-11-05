@@ -1,0 +1,7 @@
+[Service]
+ExecStart=/usr/bin/python3 /usr/local/sbin/wyse-network-request
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+RuntimeMaxSec=65
+NoNewPrivileges=yes

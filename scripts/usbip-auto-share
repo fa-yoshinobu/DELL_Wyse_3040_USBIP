@@ -1,0 +1,103 @@
+#!/usr/bin/python3
+"""Share eligible USB devices, with bounded retries and a lock shared with the Web UI."""
+import argparse
+import fcntl
+from pathlib import Path
+import re
+import subprocess
+import sys
+import time
+
+DEVICES = Path("/sys/bus/usb/devices")
+BLOCKS = Path("/sys/class/block")
+PAUSED = Path("/run/wyse-usb-paused")
+LOCK = Path("/run/wyse-usb-share.lock")
+
+
+def read(device, field):
+    return (device / field).read_text().strip()
+
+
+def attempt(bus, expected=None):
+    device = DEVICES / bus
+    if not device.exists():
+        if expected is not None:
+            raise ValueError("USB device was removed")
+        return
+    number = read(device, "devnum")
+    if expected is not None and number != expected:
+        raise ValueError("USB device changed; reload the page")
+    marker = PAUSED / bus
+    paused = marker.exists() and marker.read_text().strip() == number
+    if expected is not None and not paused:
+        raise ValueError("USB device is not paused")
+    if expected is None and paused:
+        return
+    driver = (device / "driver").resolve().name
+    if driver != "usbip-host":
+        if read(device, "bDeviceClass") in ("03", "09"):
+            if expected is not None:
+                raise ValueError("HID devices and hubs cannot be shared")
+            return
+        interfaces = list(device.glob("*/bInterfaceClass"))
+        classes = [p.read_text().strip() for p in interfaces]
+        if "03" in classes:
+            if expected is not None:
+                raise ValueError("Devices with HID interfaces cannot be shared")
+            return
+        if not classes or len(classes) != int(read(device, "bNumInterfaces")):
+            raise OSError("USB interface descriptors are not ready")
+        for block in BLOCKS.iterdir():
+            if device.resolve() in block.resolve().parents:
+                mounts = subprocess.check_output(
+                    ["lsblk", "-dnro", "MOUNTPOINTS", "/dev/" + block.name],
+                    text=True, timeout=5).strip()
+                if mounts:
+                    if expected is not None:
+                        raise ValueError("Mounted storage cannot be shared")
+                    return
+        # The port may have been reused while descriptors were being inspected.
+        if read(device, "devnum") != number:
+            raise OSError("USB device changed before bind")
+        subprocess.run(["/usr/sbin/usbip", "bind", "-b", bus], check=True, timeout=5)
+    if read(device, "devnum") != number:
+        raise OSError("USB device changed during bind")
+    if read(device, "usbip_status") not in ("1", "2"):
+        raise OSError("USB/IP device is in an error state")
+    if expected is not None:
+        marker.unlink()
+
+
+def share(bus, expected=None):
+    for retry in range(6):
+        try:
+            with LOCK.open("a") as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX)
+                attempt(bus, expected)
+            return
+        except (OSError, subprocess.SubprocessError) as error:
+            print(f"{bus}: attempt {retry + 1}/6: {error}", file=sys.stderr, flush=True)
+            if expected is not None or retry == 5:
+                raise
+            # Release the lock between attempts so a Web pause can take effect.
+            time.sleep(2 ** retry)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("bus")
+    parser.add_argument("--resume", metavar="DEVNUM")
+    args = parser.parse_args()
+    if not re.fullmatch(r"[0-9]+-[0-9]+(?:\.[0-9]+)*", args.bus):
+        raise ValueError("Invalid USB bus ID")
+    if args.resume is not None and not args.resume.isdecimal():
+        raise ValueError("Invalid USB device number")
+    share(args.bus, args.resume)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        print(str(error), file=sys.stderr)
+        sys.exit(1)

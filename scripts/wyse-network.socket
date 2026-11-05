@@ -1,0 +1,9 @@
+[Socket]
+ListenStream=/run/wyse-network.sock
+SocketGroup=www-data
+SocketMode=0660
+Accept=yes
+MaxConnections=4
+
+[Install]
+WantedBy=sockets.target

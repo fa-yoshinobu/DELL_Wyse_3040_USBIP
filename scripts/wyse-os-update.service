@@ -1,0 +1,13 @@
+[Unit]
+Description=Apply requested Debian updates during maintenance boot
+After=NetworkManager.service
+Wants=NetworkManager.service
+RequiresMountsFor=/var/lib/wyse-settings
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/sbin/wyse-os-update worker
+TimeoutStartSec=infinity
+
+[Install]
+WantedBy=multi-user.target

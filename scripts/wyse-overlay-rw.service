@@ -1,0 +1,12 @@
+[Unit]
+Description=Allow temporary writes on the Wyse OverlayFS
+DefaultDependencies=no
+ConditionPathIsMountPoint=/media/root-ro
+Before=systemd-remount-fs.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/wyse-overlay-remount
+
+[Install]
+WantedBy=systemd-remount-fs.service

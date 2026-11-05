@@ -1,0 +1,8 @@
+[Unit]
+Description=Automatically share USB device %i
+Requires=usbipd.service
+After=usbipd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/usbip-auto-share %i

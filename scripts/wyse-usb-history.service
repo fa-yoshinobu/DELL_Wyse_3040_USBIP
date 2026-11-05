@@ -1,0 +1,16 @@
+[Unit]
+Description=USB/IP connection history in RAM
+After=usbipd.service
+
+[Service]
+ExecStart=/usr/bin/python3 /usr/local/sbin/wyse-usb-history
+User=nobody
+Group=nogroup
+RuntimeDirectory=wyse-usb-history
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

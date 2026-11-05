@@ -1,0 +1,18 @@
+[Unit]
+Description=Wyse USB/IP local console
+After=NetworkManager.service systemd-user-sessions.service getty@tty1.service
+Conflicts=getty@tty1.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/sbin/wyse-console.py
+Environment=TERM=linux
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/tty1
+TTYReset=yes
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

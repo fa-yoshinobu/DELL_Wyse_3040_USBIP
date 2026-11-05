@@ -1,0 +1,1 @@
+ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", KERNEL=="[0-9]*-[0-9]*", TAG+="systemd", ENV{SYSTEMD_WANTS}+="usbip-auto@%k.service"

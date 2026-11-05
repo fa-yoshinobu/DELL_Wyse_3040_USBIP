@@ -1,0 +1,8 @@
+[Unit]
+Description=Check Debian package updates for Wyse Web management
+After=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/sbin/wyse-os-update check-worker
+TimeoutStartSec=15min
