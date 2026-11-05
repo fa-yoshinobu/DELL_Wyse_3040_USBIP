@@ -28,6 +28,10 @@ Dell Wyse 3040を、USB機器をネットワーク経由で使えるデバイス
 - [scripts](scripts/)：Python・シェル・systemd・udev・lighttpd設定
 - [tests](tests/)：モックと一時ディレクトリを使ったLinux向け単体テスト
 
+## 画面プレビュー
+
+[画面参考（preview）](preview/) にWeb画面と本体メニューを収録しています。HTMLをダウンロードし、ブラウザーで開いて確認できます。Web画面はスマホ幅・PC幅を並べて表示します。表示値はダミーデータで、実機の設定は変更しません。
+
 ## Web画面
 
 | パス | 用途 | 認証 |
